@@ -5,7 +5,7 @@ const expressJwt = require('express-jwt');
 const { sendEmail } = require('../helpers');
 const _ = require('lodash');
 const fetch = require('node-fetch');
-const { OAuth2Client } = require('google-auth-library');
+// const { OAuth2Client } = require('google-auth-library');
 
 exports.signup = async (req, res) => {
   const userExists = await User.findOne({ email: req.body.email });
@@ -129,7 +129,7 @@ exports.resetPassword = (req, res) => {
     });
   });
 };
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 exports.socialLogin = (req, res) => {
   if (req.body.accessToken !== undefined) {
     //  FACEBOOK
@@ -195,48 +195,49 @@ exports.socialLogin = (req, res) => {
       .catch(err => console.log(err));
   } else {
     // GOOGLE
-    const { tokenId, password } = req.body;
-    client
-      .verifyIdToken({
-        tokenId,
-        audience: process.env.GOOGLE_CLIENT_ID
-      })
-      .then(response => {
-        console.log('RESPONSE BACKEND GOOGLE: ', response);
-        const { email_verified, name, email } = response.payload;
-        if (email_verified) {
-          User.findOne({ email }, (err, user) => {
-            if (err || !user) {
-              user = new User({ name, email, password });
-              req.profile = user;
-              user.save();
-              const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-              res.cookie('t', token, { expire: new Date() + 9999 });
-              const { _id, name, email } = user;
-              return res.json({ token, user: { _id, name, email } });
-            } else {
-              // update existing user with new social info and login
-              req.profile = user;
-              user = _.extend(user, { name, email, password });
-              user.updated = Date.now();
-              user.save();
-              const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-              res.cookie('t', token, { expire: new Date() + 9999 });
-              const { _id, name, email } = user;
-              return res.json({ token, user: { _id, name, email } });
-            }
-          });
-        } else {
-          // if email wasn't verified
-          return res.status(400).json({
-            error: 'Google login failed. Try again.'
-          });
-        }
-      })
-      .catch(err => {
-        return res.json({
-          error: 'Request failed'
-        });
-      });
+    // const { tokenId, password } = req.body;
+    // client
+    //   .verifyIdToken({
+    //     tokenId,
+    //     audience: process.env.GOOGLE_CLIENT_ID
+    //   })
+    //   .then(response => {
+    //     console.log('RESPONSE BACKEND GOOGLE: ', response);
+    //     const { email_verified, name, email } = response.payload;
+    //     if (email_verified) {
+    //     } else {
+    //       // if email wasn't verified
+    //       return res.status(400).json({
+    //         error: 'Google login failed. Try again.'
+    //       });
+    //     }
+    //   })
+    //   .catch(err => {
+    //     return res.json({
+    //       error: 'Request failed'
+    //     });
+    //   });
+
+    User.findOne({ email: req.body.email }, (err, user) => {
+      if (err || !user) {
+        user = new User(req.body);
+        req.profile = user;
+        user.save();
+        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+        res.cookie('t', token, { expire: new Date() + 9999 });
+        const { _id, name, email } = user;
+        return res.json({ token, user: { _id, name, email } });
+      } else {
+        // update existing user with new social info and login
+        req.profile = user;
+        user = _.extend(user, req.body);
+        user.updated = Date.now();
+        user.save();
+        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+        res.cookie('t', token, { expire: new Date() + 9999 });
+        const { _id, name, email } = user;
+        return res.json({ token, user: { _id, name, email } });
+      }
+    });
   }
 };
