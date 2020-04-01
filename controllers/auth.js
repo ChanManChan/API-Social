@@ -129,7 +129,7 @@ exports.resetPassword = (req, res) => {
     });
   });
 };
-const client = new OAuth2Client(process.env.REACT_APP_GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 exports.socialLogin = (req, res) => {
   if (req.body.accessToken !== undefined) {
     //  FACEBOOK
@@ -199,9 +199,10 @@ exports.socialLogin = (req, res) => {
     client
       .verifyIdToken({
         tokenId,
-        audience: process.env.REACT_APP_GOOGLE_CLIENT_ID
+        audience: process.env.GOOGLE_CLIENT_ID
       })
       .then(response => {
+        console.log('RESPONSE BACKEND GOOGLE: ', response);
         const { email_verified, name, email } = response.payload;
         if (email_verified) {
           User.findOne({ email }, (err, user) => {
