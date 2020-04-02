@@ -11,7 +11,7 @@ const _ = require('lodash');
  */
 exports.postById = (req, res, next, id) => {
   Post.findById(id)
-    .populate('postedBy', '_id name')
+    .populate('postedBy', '_id name role')
     .populate('comments.postedBy', '_id name')
     .exec((err, post) => {
       if (err || !post) {
@@ -96,8 +96,10 @@ exports.postsByUser = (req, res) => {
 };
 
 exports.isPoster = (req, res, next) => {
-  let isPoster =
+  let sameUser =
     req.post && req.auth && req.post.postedBy._id.toString() === req.auth._id;
+  let adminUser = req.post && req.auth && req.auth.role === 'admin';
+  let isPoster = sameUser || adminUser;
   // console.log('req.auth: ', req.auth);
   // console.log('req.post.postedBy: ', req.post.postedBy);
   if (!isPoster) {

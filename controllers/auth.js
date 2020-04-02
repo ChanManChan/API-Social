@@ -32,15 +32,18 @@ exports.signin = (req, res) => {
       });
     }
     // generate a token with userId and jwtSecret(from .env)
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+    const token = jwt.sign(
+      { _id: user._id, role: user.role },
+      process.env.JWT_SECRET
+    );
     // persist the token as 't' in cookie with expiry date
     //sometimes your application is doing some complicated stuff like server side rendering and wants to make sure that we get the cookie from the server and don't want to store the cookie in the client side, if they have such approach they can use this (res.cookie('t', token, { expire: new Date() + 9999 })) as well, that's why we are adding both methods, we'll make it available in the response as well, as well as give it through the return statement.
     res.cookie('t', token, { expire: new Date() + 9999 });
     // again, we're giving the token on the res.cookie(...) as well as the actual response (return res.json({ token, user: { _id, email, name } })), depending on the frontend client it will work either way.
 
     // return response with user and token to frontend client (this is the approach we're going to use).
-    const { _id, name, email } = user;
-    return res.json({ token, user: { _id, email, name } });
+    const { _id, name, email, role } = user;
+    return res.json({ token, user: { _id, email, name, role } });
   });
 };
 
